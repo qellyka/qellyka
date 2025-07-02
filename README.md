@@ -1,4 +1,3 @@
-# 👨‍💻 Hi, I'm a Beginner Python Backend Developer!  
 
 🚀 I'm passionate about building server-side applications, chatbots, and exploring modern technologies.  
 
