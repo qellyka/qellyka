@@ -13,7 +13,7 @@ Building server-side applications and intelligent bots with Python.
 
 ### 📊 GitHub Stats
 
-![GitHub Stats](https://github-readme-stats.vercel.app/api?username=qellyka&show_icons=true&theme=radical)
+![Anurag's GitHub stats](https://github-readme-stats.vercel.app/api?username=qellyka&show_icons=true&theme=radical)
 
 ### 📫 Connect
 
