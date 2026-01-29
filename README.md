@@ -18,7 +18,7 @@ Building server-side applications and intelligent bots with Python.
 ### 📫 Connect
 
 [![Email](https://img.shields.io/badge/Email-pronyakin@proton.me-8B89CC?style=flat-square&logo=protonmail&logoColor=white)](mailto:pronyakin@proton.me)
-[![Telegram](https://img.shields.io/badge/Telegram-@qellyka-26A5E4?style=flat-square&logo=telegram&logoColor=white)](https://t.me/qellyka)
+[![Telegram](https://img.shields.io/badge/Telegram-@kinpr_dev-26A5E4?style=flat-square&logo=telegram&logoColor=white)](https://t.me/kinpr_dev)
 
 ---
 
