@@ -13,10 +13,8 @@ Building server-side applications and intelligent bots with Python.
 
 ### 📊 GitHub Stats
 
-<div align="center">
-  <img src="https://github-readme-stats.vercel.app/api?username=qellyka&show_icons=true&theme=radical" width="400" />
-  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=qellyka&layout=compact&theme=radical" width="400" />
-</div>
+![qellyka's GitHub stats](https://github-readme-stats.vercel.app/api?username=anuraghazra&show_icons=true&theme=radical)
+<img src="https://github-readme-stats.vercel.app/api/top-langs/?username=qellyka&layout=compact&theme=radical" width="400" />
 
 
 ### 📫 Connect
