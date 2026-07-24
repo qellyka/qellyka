@@ -11,15 +11,6 @@ Building server-side applications and intelligent bots with Python.
 
 **Currently exploring:** REST API design • Database architecture • FastAPI
 
-### 📊 GitHub Stats
-
-<p align="left">
-  <img src="https://github-readme-stats.vercel.app/api?username=qellyka&show_icons=true&theme=radical&card_width=469" width="469" height="196" alt="GitHub Stats" />
-  <br/>
-  <br/>
-  <img src="https://github-readme-stats.vercel.app/api/top-langs/?username=qellyka&layout=compact&theme=radical&card_width=469" width="469" height="196" alt="Top Languages" />
-</p>
-
 ### 📫 Connect
 
 [![Email](https://img.shields.io/badge/Email-pronyakin@proton.me-8B89CC?style=flat-square&logo=protonmail&logoColor=white)](mailto:pronyakin@proton.me)
