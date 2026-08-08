@@ -5,6 +5,9 @@
 #   1. Обновление системы
 #   2. Установка и настройка nftables (единственный файрвол, открыты только SSH/80/443)
 #   3. Установка Docker CE + Docker Compose plugin (последние версии из офиц. репозитория)
+#   4. Ранний forward-чейн (priority -200), который не даёт Docker пробрасывать
+#      наружу порты контейнеров в обход общей политики — снаружи по-прежнему
+#      доступны только 80/443 (для контейнеров, не только для хоста)
 #
 # Использование:
 #   sudo ./server-setup.sh [SSH_PORT]
@@ -88,6 +91,18 @@ detect_ssh_port() {
   fi
 }
 
+detect_ext_iface() {
+  local iface
+  iface=$(ip -4 route show default 2>/dev/null | awk '/default/ {for(i=1;i<=NF;i++) if ($i=="dev") print $(i+1)}' | head -n1)
+
+  if [[ -z "$iface" ]]; then
+    log_err "Не удалось определить внешний сетевой интерфейс. Укажи его вручную (переменная EXT_IFACE)."
+    exit 1
+  fi
+
+  echo "$iface"
+}
+
 # ----------------------------------------------------------------------------
 # Обновление системы
 # ----------------------------------------------------------------------------
@@ -130,12 +145,37 @@ install_nftables() {
 
 configure_nftables() {
   local ssh_port="$1"
-  log_info "Настраиваю правила nftables (SSH: ${ssh_port}, HTTP: 80, HTTPS: 443)..."
+  local ext_iface="$2"
+  log_info "Настраиваю правила nftables (SSH: ${ssh_port}, HTTP: 80, HTTPS: 443, внешний интерфейс: ${ext_iface})..."
 
   cat > /etc/nftables.conf <<EOF
 #!/usr/sbin/nft -f
 
 flush ruleset
+
+# Ранний чейн на forward-хуке (priority -200). Docker (28+/29+, нативный nftables-режим)
+# создаёт свою таблицу "inet docker" с chain forward на priority -100 и policy accept —
+# то есть по умолчанию разрешает наружу ЛЮБОЙ опубликованный порт контейнера (-p ...),
+# в обход политики ниже. Чтобы это правило сработало раньше докеровского, приоритет
+# должен быть меньше -100. Здесь -200.
+table inet docker_guard {
+    chain forward_early {
+        type filter hook forward priority -200; policy accept;
+
+        ct state invalid drop
+        ct state established,related accept
+
+        # Трафик не с внешнего интерфейса (между контейнерами, docker <-> docker) не трогаем
+        iifname != "${ext_iface}" accept
+
+        # С внешнего интерфейса в контейнеры пропускаем только 80/443 —
+        # так же, как для сервисов на самом хосте
+        iifname "${ext_iface}" tcp dport { 80, 443 } accept
+
+        # Всё остальное, что Docker пытается пробросить наружу — режем
+        iifname "${ext_iface}" drop
+    }
+}
 
 table inet filter {
     chain input {
@@ -168,7 +208,7 @@ EOF
   systemctl restart nftables
 
   log_ok "nftables настроен и запущен как единственный файрвол."
-  log_warn "Открыты только порты: SSH(${ssh_port}), 80, 443. Остальной входящий трафик блокируется."
+  log_warn "Снаружи доступны только: SSH(${ssh_port}), 80, 443 — это верно и для хоста, и для Docker-контейнеров."
 }
 
 # ----------------------------------------------------------------------------
@@ -211,25 +251,27 @@ main() {
   require_root
   detect_os
 
-  local ssh_port
+  local ssh_port ext_iface
   ssh_port=$(detect_ssh_port "${1:-}")
+  ext_iface=$(detect_ext_iface)
 
   update_system
   disable_other_firewalls
   install_nftables
-  configure_nftables "$ssh_port"
+  configure_nftables "$ssh_port" "$ext_iface"
   install_docker
 
   echo ""
   log_ok "Готово! Сервер настроен."
-  echo -e "  ${C_CYAN}Открытые порты:${C_RESET} SSH(${ssh_port}), 80, 443"
+  echo -e "  ${C_CYAN}Открытые порты:${C_RESET} SSH(${ssh_port}), 80, 443 (для хоста и для Docker-контейнеров)"
   echo -e "  ${C_CYAN}Файрвол:${C_RESET}        nftables (systemctl status nftables)"
+  echo -e "  ${C_CYAN}Внешний интерфейс:${C_RESET} ${ext_iface}"
   echo -e "  ${C_CYAN}Docker:${C_RESET}         $(docker --version)"
   echo -e "  ${C_CYAN}Compose:${C_RESET}        $(docker compose version --short 2>/dev/null || echo 'см. docker compose version')"
   echo ""
-  log_warn "Важно: опубликованные Docker-портами контейнеры (docker run -p ...) могут"
-  log_warn "обходить правила выше — Docker управляет своими цепочками NAT/FORWARD"
-  log_warn "отдельно от таблицы inet filter. Учитывай это при публикации портов."
+  log_warn "Если позже опубликуешь у контейнера ещё один порт (docker run -p 8080:8080),"
+  log_warn "снаружи он всё равно останется закрыт — chain docker_guard/forward_early"
+  log_warn "пропускает с ${ext_iface} только 80/443. Расширяй список портов в /etc/nftables.conf."
   echo ""
 }
 
